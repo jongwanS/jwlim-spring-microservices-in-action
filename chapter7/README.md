@@ -41,6 +41,11 @@ Will execute the [Spotify dockerfile plugin](https://github.com/spotify/dockerfi
 
  Running the above command at the root of the project directory will build all of the projects.  If everything builds successfully you should see a message indicating that the build was successful.
 
+> 맥북 M1 계열 사용자 중 spotify docker plugin으로 빌드가 되지 않는다면 아래 명령을 사용하기 바란다.
+> ```bash
+> $ mvn clean package
+> $ ./build-for-m1.sh
+> ```
 # The Run command
 
 This command will run our services using the docker-compose.yml file located in the /docker directory. 

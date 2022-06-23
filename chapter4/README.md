@@ -30,6 +30,12 @@ $ mvn clean package dockerfile:build
 $ docker-compose up
 ```
 
+> 맥북 M1 계열 사용자 중 spotify docker plugin으로 빌드가 되지 않는다면 아래 명령을 사용하기 바란다.
+> ```bash
+> $ mvn clean package
+> $ ./build-for-m1.sh
+> ```
+
 ## Contact
 
 I'd like you to send me an email on <illaryhs@gmail.com> about anything you'd want to say about this software.

@@ -39,6 +39,12 @@ $ mvn clean package dockerfile:build
 $ docker-compose -f docker/docker-compose.yml up
 ```
 
+> 맥북 M1 계열 사용자 중 spotify docker plugin으로 빌드가 되지 않는다면 아래 명령을 사용하기 바란다.
+> ```bash
+> $ mvn clean package
+> $ ./build-for-m1.sh
+> ```
+
 # The build command
 
 Will execute the [Spotify dockerfile plugin](https://github.com/spotify/dockerfile-maven) defined in the pom.xml file.  
