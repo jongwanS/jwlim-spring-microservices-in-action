@@ -13,6 +13,12 @@ Code used on the 1st Chapter of the Spring Microservices in Action - Second Edit
 
 To clone and run this application, you'll need [Git](https://git-scm.com), [Maven](https://maven.apache.org/), [Java 11](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html). From your command line:
 
+> JAVA 버전 확인
+> ```bash
+> $ mvn --version
+> ```
+> 실행 결과의 JAVA 버전이 11임을 확인한 후 아래 명령을 실행한다.
+
 ```bash
 # Clone this repository
 $ git clone https://github.com/klimtever/manning-smia2

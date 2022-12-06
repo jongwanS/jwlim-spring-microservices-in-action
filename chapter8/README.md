@@ -19,7 +19,11 @@ Welcome to Spring Microservices in Action, Chapter 8.  Chapter 8 introduces the 
 ## How To Use
 
 To clone and run this application, you'll need [Git](https://git-scm.com), [Maven](https://maven.apache.org/), [Java 11](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html). From your command line:
-
+> JAVA 버전 확인
+> ```bash
+> $ mvn --version
+> ```
+> 실행 결과의 JAVA 버전이 11임을 확인한 후 아래 명령을 실행한다.
 ```bash
 # Clone this repository
 $ git clone https://github.com/klimtever/manning-smia2
@@ -35,7 +39,10 @@ $ mvn clean package dockerfile:build
 # Now we are going to use docker-compose to start the actual image.  To start the docker image, stay in the directory containing  your chapter 8 source code and  Run the following command: 
 $ docker-compose -f docker/docker-compose.yml up
 ```
-
+> 맥북 M1 계열 사용자 중 spotify docker plugin으로 빌드가 되지 않는다면 아래 명령을 사용하기 바란다.
+> ```bash
+> $ ./build-for-m1.sh
+> ```
 # The build command
 
 Will execute the [Spotify dockerfile plugin](https://github.com/spotify/dockerfile-maven) defined in the pom.xml file.  

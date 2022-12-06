@@ -13,7 +13,11 @@ Code used on the 4th Chapter of the Spring Microservices in Action - Second Edit
 ## How To Use
 
 To clone and run this application, you'll need [Git](https://git-scm.com), [Maven](https://maven.apache.org/), [Java 11](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html). From your command line:
-
+> JAVA 버전 확인
+> ```bash
+> $ mvn --version
+> ```
+> 실행 결과의 JAVA 버전이 11임을 확인한 후 아래 명령을 실행한다.
 ```bash
 # Clone this repository
 $ git clone https://github.com/klimtever/manning-smia2
@@ -32,7 +36,6 @@ $ docker-compose up
 
 > 맥북 M1 계열 사용자 중 spotify docker plugin으로 빌드가 되지 않는다면 아래 명령을 사용하기 바란다.
 > ```bash
-> $ mvn clean package
 > $ ./build-for-m1.sh
 > ```
 
