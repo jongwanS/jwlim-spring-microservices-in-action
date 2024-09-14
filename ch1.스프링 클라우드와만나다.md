@@ -72,14 +72,96 @@
 
 
 ## 1.2 스프링 마이크로서비스
-
+- 스프링은 자바 기반 애플리케이션을 구축할 수 있는 가장 대중적인 개발 프레임워크
+- 모놀리스 애플리케이션 => 클라우드에 작은 서비스를 배포하는 분산된 모델로 이동
+  - `스프링 부트` & `스프링 클라우드` 프로젝트가 시작되었다.
+- `스프링 부트`
+  - 핵심 제품 기능
+    - **내장형 웹 서버** : tomcat(기본), jetty, Undertow
+    - 프로젝트 스타터 라이브러리들
+    - 스프링에 대한 기능적으로 자동화된 구성
+    - 운영 환경에 바로 사용 가능한 다양한 기능
+  - 이점
+    - 개발 시간 단축, 효율성 생산성 향상
+    - 내장형 HTTP 서버 제공
+    - 보일러플레이트 코드 작성 회피
+    - 스프링 데이터/시큐리티/클라우드 같은 스프링 생태계와 통합 용이
+    - 다양한 개발 플러그인
+- `스프링 클라우드`
+  - 사설(private) 또는 공용(public) 클라우드에 마이크로서비스를 간단하게 운영하고 배포 할 수 있다.
 ## 1.3 우리가 구축할 것은 무엇인가?
+- [그림 1-4] 이 책에서 사용될 서비스와 기술 개요  
+  ![img_1.png](images/ch01/img_3.png)  
+  - 클라우인터 요청 시작시 액세스 토큰을 획득하기 위해 `키클록`인증을 받는다.
+  - 토큰을 얻고 클라이언트는 `스프링 클라우드 API 게이트웨이`에 요청을 보낸다.
+    - API 게이트웨이 서비스는 전체 아키텍처에 대한 **진입점**이다.
+    - **유레카 서비스와 통신**하여 `조직` 및 `라이선스` 서비스의 위치를 조회하고 호출한다.
+  - `조직 서비스`가 요청을 받으면 **키클록에 액세스 토큰의 유효성을 검증**하여 요청을 처리할 수 있는지 확인한다.
+    - 조직 DB 정보 갱신, HTTP 응답을 보낸다.
+    - 카프카 토픽을 전송하여 `라이선싱 서비스`가 변경 사항을 인식하게 한다. 
+    - `메시지`가 `라이선싱 서비스`에 도착시, 인메모리에 저장한다.
+    - **집킨**, **엘라스틱서치**, **로그 스태시**를 사용하여 `로그를 관리 및 표시`
+    - **스프링 부트 액추에이터**, **프로메테우스**, **그라파나**를 통해 애플리케이션 지표를 `노출 및 표시`
 ## 1.4 이 책의 내용
 ### 1.4.1 이 책에서 배울 내용
+- 마이크로서비스의 정의, 모범 사례, 설계 고려 사항
+- 마이크로서비스 기반 애플리케이션을 구축하면 안 되는 경우
+- 스프링 부트 프레임워크를 사용하여 MSA를 구축하는 방법
+- 클라우드 기반 애플리메이션 핵심 운영 패턴
+- 도커의 정의, 마이크로서비스와의 통합
+- 스프링 클라우드 사용법
+- 애플리케이션 지표 및 모니터링 도구로 시각화
+- 집킨과 슬루스를 통한 분산 추적
+- ELK 스택으로 애플리케이션 로그 관리
+- 클라우드에서 서비스 배포 파이프라인 구축
 ### 1.4.2 이 책의 연관성
 
 ## 1.5 클라우드 및 마이크로서비스 기반 애플리케이션
 ### 1.5.1 스프링 부트로 마이크로서비스 구축하기
+- [그림 1-5] 스프링 부트는 공통의 REST 마이크로서비스 작업
+![img_1.png](images/ch01/img_4.png)
+````java
+@SpringBootApplication
+@RestController
+@RequestMapping(value="hello")
+public class Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
+	@GetMapping(value="/{firstName}")
+	public String helloGET( 
+			@PathVariable("firstName") String firstName,
+			@RequestParam("lastName") String lastName) {
+		return String.format("{\"message\":\"Hello %s %s\"}",firstName, lastName);
+	}
+	
+	@PostMapping
+	public String helloPOST( @RequestBody HelloRequest request) {
+		return String.format("{\"message\":\"Hello %s %s\"}",request.getFirstName(), request.getLastName());
+	}
+}
+
+class HelloRequest{
+	
+	private String firstName;
+	private String lastName;
+	
+	public String getFirstName() {
+		return firstName;
+	}
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+	public String getLastName() {
+		return lastName;
+	}
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+}
+````
 ### 1.5.2 클라우드 컴퓨팅이란 정확히 무엇인가?
 ### 1.5.3 왜 클라우드와 마이크로서비스인가?
 ## 1.6 마이크로서비스는 코드 작성 이상을 의미한다.
