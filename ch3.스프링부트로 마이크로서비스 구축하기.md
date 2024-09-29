@@ -72,6 +72,7 @@
 **인터페이스는 직관적이어야 한다.**
 
 - REST 철학을 수용하라.
+  - GET(조회), POST(생성), PUT(전체 수정), PATCH(부분 수정), DELETE(삭제)
   - **리처드슨의 성숙도 모델** (RESTful 서비스의 수준을 나타내는 모델)
   ````text
   - 레벨 0: POX(Plain Old XML)
