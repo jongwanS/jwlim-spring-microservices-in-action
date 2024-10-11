@@ -148,6 +148,17 @@ networks:
 - 스프링 부트는 레이어로 나뉜JAR(layered JAR)라는 새로운 JAR 레이아웃을 도입
 - 레이어로 분리한 것은 빌드에 필 요한 정보를 남겨 두고 빌드 간 변경될 가능성에 따라 코드를 나누기 위해
 ### 4.5.3 도커 컴포즈로 서비스 실행하기
+````yaml
+version: '3'
+
+services:
+  licensingservice:
+    image: ostock/licensing-service:0.0.1-SNAPSHOT
+    ports:
+      - "8080:8080"
+    environment:
+       - "SPRING_PROFILES_ACTIVE=dev"
+````
 - **도커 컴포즈**는 도커 설치 과정의 일부로 설치되며 **서비스를 그룹으로 정의**한 후 단일 단위로 시작 할 수 있는 **서비스 오케스트레이션 도구**
 ````shell
 docker-compose up
