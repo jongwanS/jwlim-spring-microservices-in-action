@@ -45,9 +45,62 @@
 - 책 에서는 `스프링 클라우드 구성 서버(Spring Cloud Configuration Server)`를 채택
 
 ## 5.2 스프링 클라우드 컨피그 서버 구축
+- 스프링 클라우드 컨피그 서버는 `REST 기반`의 **애플리케이션** 이다.
+- 부트스트랩(bootstrap) 파일은, `애플리케이션 이름`, `스프링 클라우드 구성 서버 위치`, `암호화/복호화 정보` 등을 지정한다.
+  - application.properties나 application.yml 파일을 사용하는 컴포넌트보다 먼저 로드
+
+````yaml
+spring:
+  application:
+    name: config-server #컨피그 서버 애플리케이션 이름 
+server:
+  port: 8071 #서버 포트
+````
+
 ### 5.2.1 스프링 클라우드 컨피그 부트스트랩 클래스 설정
+- 부트스트랩 클래스를 설정
+````java
+@SpringBootApplication
+@EnableConfigServer //이 서비스룰 스프링 클라우드 컨피그 서비스로 활성화
+public class ConfigurationServerApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(ConfigurationServerApplication.class, args);
+	}
+}
+````
+
 ### 5.2.2 스프링 클라우드 컨피그 서버에 파일 시스템 적용
+- `스프링 클라우드 컨피그 서버`는 bootstrap.yml 파일에서 애플리케이션의 **구성 데이터를 보관할 저장소를 지정**한다.
+````yaml
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native #백엔드 저장소(파일시스템)와 관련된 스프링 프로파일을 설정한다.
+
+  cloud:
+    config:
+      server:
+      # 로컬 구성 정보: classpath 위치나 파일 시스템의 위치가 될 수 있다.
+        native:
+        # 특정 파일 시스템 폴더에서 읽어 온다.
+          search-locations: file:///(FILE_PATH) #구성 파일이 저장된 검색 위치를 설정한다.
+          #search-locations: classpath:/config 클래스패스
+server:
+  port: 8071
+````
 ### 5.2.3 서비스의 구성 파일 설정
+[그림 5-5] 컨피그 서비스를 설정&사용 하는 방법
+![img_1.png](images/ch05/img_3.png)         
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+> 구현 전 생각하라
+> - 중대형 클라우드 애플리케이션에는 파일 시스템 기반 솔루션을 권장하지 않는다.
+
+- http://localhost:8071/licensing-service/dev
+  - default와 dev의 구성 프로퍼티를 모두 반환
+![img_1.png](images/ch05/img_4.png)         
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판
 
 ## 5.3 스프링 클라우드 컨피그와 스프링 부트 클라이언트 통합
 ### 5.3.1 라이선싱 서비스의 스프링 클라우드 컨피그 서비스 의존성 설정
