@@ -100,17 +100,78 @@ server:
 - http://localhost:8071/licensing-service/dev
   - default와 dev의 구성 프로퍼티를 모두 반환
 ![img_1.png](images/ch05/img_4.png)         
-출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
 ## 5.3 스프링 클라우드 컨피그와 스프링 부트 클라이언트 통합
-### 5.3.1 라이선싱 서비스의 스프링 클라우드 컨피그 서비스 의존성 설정
-### 5.3.2 스프링 클라우드 컨피그 사용을 위한 라이선싱 서비스 구성
-### 5.3.3 스프링 클라우드 컨피그 서버를 사용하여 데이터 소스 연결
-### 5.3.4 @ConfigurationProperties 를 사용하여 프로퍼티 직접 읽기
-### 5.3.5 스프링 클라우드 컨피그 서버를 사용하여 프로퍼티 갱신
-### 5.3.6 깃과 함께 스프링 클라우드 컨피그 서버 사용
-### 5.3.7 볼트와 스프링 클라우드 컨피그 서비스 통합
+- `라이선싱 서비스 부팅`시, 전달된 스프링 프로파일에 설정된 엔드포인트로 `스프링 클라우드 컨피그 서비스와 통신`
+- 스프링 클라우드 컨피그 서비스, 구성된 백엔드 저장소(파일 시스템. 깃, 볼트)를 사용하여 URI에 매개변수로 전달된 스프링 프로파일에 해당하는 구성 정보를 검색
+![img_1.png](images/ch05/img_5.png)           
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
 
+### 5.3.1 라이선싱 서비스의 스프링 클라우드 컨피그 서비스 의존성 설정
+````xml
+<!-- 
+spring-cloud-starter-config는 스프링 클라우드 컨피그 서버와 통신하는 데 필요한 모든 클래스를 포함
+-->
+<dependency>
+    <groupld>org.springframework.cloud</groupld> 
+    <artifactld>spring-cloud-starter-config</artifactld>
+</dependency>
+````
+
+### 5.3.2 스프링 클라우드 컨피그 사용을 위한 라이선싱 서비스 구성
+````yaml
+spring:
+    application:
+     name: licensing-service
+    profiles:
+      active: dev #실행될 프로파일 지정
+    cloud:
+        config: 
+            uri: http://configserver:8071 #스프링 클라우드 컨피그 서버 위치 지정
+````
+- spring.application.name은 애플리케이션 이름(licensing-service)이며, 스프링 클라우드 컨피그 서버 내 `config 디렉터리 이름과 직접적으로 매핑`
+- **프로파일**은 스프링 부트 애플리케이션에서 사용될 구성 데이터를 구분하는 메커니즘
+- spring.cloud.config.uri는 `라이선싱 서비스`가 **컨피그 서버 엔드포인트를 찾을 위치**
+
+### 5.3.3 스프링 클라우드 컨피그 서버를 사용하여 데이터 소스 연결
+- 라이선스 인프라레이어 계층 접근 설명.
+
+### 5.3.4 @ConfigurationProperties 를 사용하여 프로퍼티 직접 읽기
+- 스프링 클라우드 컨피그 서버에서 모든 `example 프로 퍼티`를 가져와 ServiceConfig 클래스의 프로퍼티 속성으로 주입
+
+### 5.3.5 스프링 클라우드 컨피그 서버를 사용하여 프로퍼티 갱신
+- 컨피그 서버는 항상 최신 프로퍼티 버전을 제공
+- 내부 저장소에서 프로퍼티가 변경되면 항상 최신 상태로 유지된다.
+- **@RefreshScope 애너테이션**을 사용하여 스프링 애플리케이션이 구성정보를 다시 읽게 만드는 **/refresh 엔드포인트에 접근**
+- @RefreshScope 사용 유의 사항
+  - 사용자가 정의한 스프링 프로퍼티만 다시 로드된다.
+
+````java
+@SpringBootApplication
+@RefreshScope
+public class LicenseServiceApplication {
+    //...
+}
+````
+
+### 5.3.6 깃과 함께 스프링 클라우드 컨피그 서버 사용
+- 깃을 사용하면 구성 관리할 **프로퍼티를 소스 제어**하에 두는 모든 이점을 얻을 수 있고
+- 프로퍼티 관리 파일의 배포를 빌드 및 배포 **파이프라인에 쉽게 통합**
+![img_1.png](images/ch05/img_6.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+### 5.3.7 볼트와 스프링 클라우드 컨피그 서비스 통합
+- 백엔드 저장소로 하시코프 볼트
+- 볼트는 시크릿에 안전하게 접근할 수 있는 도구이며 패스워드, 인증서, API 키 등 접근을 제한하거나 제한하려는 어떤 정보로도 시크릿을 정의
+- 스프링 컨피그 서비스에서 볼트를 구성하려면 볼트 프로파일을 추가
+````
+docker run -d -p 8200:8200 —name vault -e 'VAULT.DEV_ROOT_TOKEN_ID=myroot' - e 1VAULT_DEV_LISTEN_ADDRESS=0.0 .0 .0 :82001 vault
+````
+- VAULT_DEV_ROOT_TOKEN_ID 
+  - 생성된 루트 토큰 ID를 설정
+- VAULT_DEV_LISTEN_ADDRESS
+  - 개발 서버의 IP 주소와 포트를 설정
+### 5.3.8 볼트 UI
 
 ## 5.4 중요한 구성 정보 보호
 ## 5.5 마치며
