@@ -164,15 +164,57 @@ public class LicenseServiceApplication {
 - 백엔드 저장소로 하시코프 볼트
 - 볼트는 시크릿에 안전하게 접근할 수 있는 도구이며 패스워드, 인증서, API 키 등 접근을 제한하거나 제한하려는 어떤 정보로도 시크릿을 정의
 - 스프링 컨피그 서비스에서 볼트를 구성하려면 볼트 프로파일을 추가
+````shell
+# 볼트 설치
+docker run -d -p 8200:8200 --name vault -e 'VAULT_DEV_ROOT_TOKEN_ID=myroot' -e 'VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200' hashicorp/vault:latest
 ````
-docker run -d -p 8200:8200 —name vault -e 'VAULT.DEV_ROOT_TOKEN_ID=myroot' - e 1VAULT_DEV_LISTEN_ADDRESS=0.0 .0 .0 :82001 vault
-````
-- VAULT_DEV_ROOT_TOKEN_ID 
+- VAULT_DEV_ROOT_TOKEN_ID
   - 생성된 루트 토큰 ID를 설정
 - VAULT_DEV_LISTEN_ADDRESS
   - 개발 서버의 IP 주소와 포트를 설정
 ### 5.3.8 볼트 UI
-
+- 비밀번호 myroot
+![img_1.png](images/ch05/img_7.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch05/img_8.png)               
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch05/img_9.png)                 
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+---
+- 볼트는 시크릿 생성 과정을 도와주는 통합 인터페이스를 제공
+- http://0.0.0.0:8200/ui/vauk/auth에 접속
+- 시크릿 생성
+  ````shell
+  curl -X "GET" "http://localhost:8071/licensing-service/default" -H "X-config-Token: myroot"
+  ````
 ## 5.4 중요한 구성 정보 보호
+- `스프링 클라우드 컨피그` 서버는 모든 프로퍼티를 `평문으로 저장`한다.
+- `스프링 클라우드 컨피그`는 프로퍼티를 쉽게 암호화할 수 있는 기능 제공을 한다.
+  - `대칭(공유 시크릿)` 및 `비대칭 암호화(공개/비공개)키` 사용을 지원
+    - 대칭키 : 같은 키로 암호화와 복호화를 모두 수행합니다
+    - 비대칭키 : 공개키는 데이터를 암호화하고, 비밀키는 데이터를 복호화하는 데 사용, 공개키는 자유롭게 배포할 수 있지만, 비밀키는 소유자만 소유 
+### 5.4.1 대칭 암호화 키 설정
+- 스프링 클라우드 컨피그 서버에서 대칭 암호화 키는 `bootstrap.yml` 파일에 설정하거나, `ENCRYPT_KEY`라는 OS 환경변수로 서비스에 전달
+````yaml
+server:
+  port: 8071
+encrypt:
+  key: secretKey #컨피그 서버는 이 값을 대칭 키로 사용
+````
+
+### 5.4.2 프로퍼티 암호화와 복호화
+- 스프링 클라우드 컨피그 인스턴스를 실행하면, **ENCRYPT_KEY** 환경변수 또는 **bootstrap** 파일의 프로퍼티 설정을 감지
+  - `/encrypt` 와 `/decrypt` **엔드포인트**를 스프링 클라우드 서비스에 자동으로 추가
+- encrypt
+  - curl -X POST "http://localhost:8071/encrypt" -H "Content-Type: text/plain" -d "postgres"
+- decrypt
+  - curl -X POST "http://localhost:8071/decrypt" -H "Content-Type: text/plain" -d "25c14d73ba8e3e81de7f1b066c416ce2857ff02df921e00efc7e4561dce5f058"
+![img_1.png](images/ch05/img_10.png)  
+
 ## 5.5 마치며
+- 애플리케이션의 구성 관리는 클라우드 기반 환경에서는 매우 중요하다.
+- 서버를 다른 환경으로 승격할 때는 절대 **수동으로 구성하지 않는 것이 중요**하다.
 ## 5.6 요약
+- 스프링 클라우드 구성 서버를 사용하여, 프로퍼티 값을 환경별로 설정할 수 있다.
+- 스프링 클라우드 컨피그 서비스는 파일 또는 깃, 볼트 기반의 애플리케이션 구성 저장소를 사용하여 애플리케이션 프로퍼티를 저장할 수 있다.
+- 스프링 클라우드 컨피그 서비스는 대칭 및 비대칭 암호화를 사용하여 정보를 암호화 할 수 있다.

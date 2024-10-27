@@ -1,8 +1,15 @@
 spring:
     application:
-     name: licensing-service 
+     name: licensing-service
     profiles:
       active: dev
     cloud:
-        config: 
-            uri: http://configserver:8071
+        config:
+          uri: http://configserver:8071
+    # Database
+    datasource:
+      driver-class-name: org.postgresql.Driver
+      url: jdbc:postgresql://localhost:5432/ostock_dev
+      platform: postgres
+      username: postgres
+      password: "{cipher}249636ff321beed0da02f3f440d2925b7704ad79f0ab9a639e46b852b97045e3"
