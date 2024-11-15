@@ -1,8 +1,15 @@
 spring:
     application:
-     name: licensing-service 
+     name: licensing-service #유레카에 등록될 서비스의 논리적 이름
     profiles:
       active: dev
     cloud:
         config: 
-            uri: http://configserver:8071
+            uri: http://localhost:8071
+  # Database
+#    datasource:
+#      driver-class-name: org.postgresql.Driver
+#      url: jdbc:postgresql://localhost:5432/ostock_dev
+#      platform: postgres
+#      username: postgres
+#      password: postgres

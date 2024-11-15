@@ -1,8 +1,8 @@
 spring:
     application:
-     name: organization-service 
+     name: organization-service #유레카에 등록될 서비스의 논리적 이름
     profiles:
       active: dev
     cloud:
         config: 
-            uri: http://configserver:8071
+            uri: http://localhost:8071
