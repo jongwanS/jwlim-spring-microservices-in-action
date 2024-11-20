@@ -62,8 +62,65 @@
   - 사람의 개입 없이 자원데 대한 재접근을 허용하도록 해준다.
 
 ## 7.3 Resilience4j 구현
+- Resilience4j는 내결함성 라이브러리다. **결함 내성을 높이기 위해 다음 패턴을 제공**
+  - `회로 차단기`
+    - 서비스 실패시, 요청을 중단한다.
+  - `재시도`
+    - 서비스 실패시, 재시도 한다.
+  - `벌크헤드`
+    - 과부하를 피하고자 서비스 요청 수를 제한한다.
+  - `속도 제한`
+    - 서비스가 한 번에 수신하는 호출 수를 제한한다.(초당 100개 요청과 같이 요청의 수에 제한)
+  - `폴백`
+    - 실패요청에 대해 대체 경로를 설정한다.
+
+> Resilience4j가 적용되는 순서
+> - Retry(CircuitBreaker(RateLimiter(TimeLimiter(Bulkhead(Function)))))
+> - RateLimiter : 요청 수를 제한
+> - TimeLimiter : 작업 시간(타임아웃)을 제한
+
 ## 7.4 스프링 클라우드와 Resilience4j를 사용하는 라이선싱 서비스 설정
+````xml
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot2</artifactId>
+    <version>${resilience4j.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-circuitbreaker</artifactId>
+    <version>${resilience4j.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-timelimiter</artifactId>
+    <version>${resilience4j.version}</version>
+</dependency>
+ <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+````
 ## 7.5 회로 차단기 구현
+- 회로 차단기가 추구하는 것은 **원격 호출을 모니터링**하고 **서비스를 장기간 기다리지 않게 하는 것**
+![img_1.png](images/ch07/img_3.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch07/img_4.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+- 최초 링버퍼 12개는 채운 이후에, 회로 차단기 기능이 실행된다.(최초 11번 실패해도, 회로차단기는 작동하지 않음.)
+- 요청 성공시 0, 실패시 1로 링버퍼를 채운다.
+- 회로 차단기가 열린 상태라면 설정된 시간 동안 호출은 거부되며, `CallNotPermittedException` **예외**를 발생시킨다.
+  - 설정 시간이 만료되면, 회로 차단기는 `반열린 상태로 변경`된다.
+  - `반열린 상태`에서 **실패율을 평가**한다.
+
+[그림 7-6] 구현할 내용
+![img_1.png](images/ch07/img_5.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+
+### 7.5.1 조직 서비스에 회로 차단기 추가
+### 7.5.2 회로 차단기 사용자 정의
+
 ## 7.6 폴백 처리
 ## 7.7 벌크헤드 패턴 구현
 ## 7.8 재시도 패턴 구현
