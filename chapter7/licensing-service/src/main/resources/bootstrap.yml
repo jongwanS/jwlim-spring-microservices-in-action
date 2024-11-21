@@ -5,13 +5,13 @@ spring:
       active: dev
     cloud:
         config: 
-            uri: http://configserver:8071
+            uri: http://localhost:8071
 
-logging:
-  level:
-    com.netflix: WARN
-    org.springframework.web: WARN
-    com.optimagrowth: DEBUG
+#logging:
+#  level:
+#    com.netflix: WARN
+#    org.springframework.web: WARN
+#    com.optimagrowth: DEBUG
 
 #auditevents  , Exposes audit events information for the current application.
 #beans  , Displays a complete list of all the Spring beans in your application.

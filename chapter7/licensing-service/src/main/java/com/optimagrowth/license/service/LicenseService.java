@@ -114,11 +114,11 @@ public class LicenseService {
 
 	}
 
-	// @CircuitBreaker(name = "licenseService")	//코드 7-2의 경우 이 애너테이션만 추가한다.
-	@CircuitBreaker(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
-	@RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
-	@Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList")
-	@Bulkhead(name = "bulkheadLicenseService", type= Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
+	 @CircuitBreaker(name = "licenseService")	//코드 7-2의 경우 이 애너테이션만 추가한다.
+//	@CircuitBreaker(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
+//	@RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
+//	@Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList")
+//	@Bulkhead(name = "bulkheadLicenseService", type= Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
 	public List<License> getLicensesByOrganization(String organizationId) throws TimeoutException {
 		logger.debug("getLicensesByOrganization Correlation id: {}",
 				UserContextHolder.getContext().getCorrelationId());

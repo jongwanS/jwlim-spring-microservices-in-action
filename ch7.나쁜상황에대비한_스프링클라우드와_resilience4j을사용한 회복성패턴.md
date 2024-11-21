@@ -33,15 +33,15 @@
   - 스레드 풀별로 서비스를 할당하면 다른 서비스는 포화되지 않기 때문에 병목 현상을 우회할 수 있다.
 
 ## 7.2 클라이언트 회복성이 중요한 이유
-[그림 7-2] 회복성 패턴 미적용
+[그림 7-2] 회복성 패턴 미적용  
 ![img_1.png](images/ch07/img_1.png)  
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
 - 회복성 패턴이 적용되지 않았을 경우, 한 개의 고장난 서비스로 인해 어떻게 전체 아키텍처가 다운 되는지를 보여 준다.
   - NAS 시스템 문제 발생(재고 서비스)
   - 라이선싱 서비스 -> 조직 서비스 -> 재고 서비스 순으로 호출
-    - `라이선싱 서비스`는 `재고 서비스`로 느려진 `조직 서비스`를 호출하기 때문에 자원 부족 시작 => 회로 차단기 패턴이 있었다면, 이러한 문제를 사전 방지 가능.
+    - `라이선싱 서비스`는 `재고 서비스`로 느려진 `조직 서비스`를 호출하기 때문에 자원 부족 시작 => 회로 차단기 패턴이 있었다면, 이러한 문제를 사전 방지 가능.  
 
-[그림 7-3] 회복성 패턴 적용
+[그림 7-3] 회복성 패턴 적용  
 ![img_1.png](images/ch07/img_2.png)  
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 - `정상 경로`
@@ -113,14 +113,44 @@
   - 설정 시간이 만료되면, 회로 차단기는 `반열린 상태로 변경`된다.
   - `반열린 상태`에서 **실패율을 평가**한다.
 
-[그림 7-6] 구현할 내용
+[그림 7-6] 구현할 내용  
 ![img_1.png](images/ch07/img_5.png)  
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
+[그림 7-7] 라이선싱 서비스 회로 차단기 열린 상태  
+![img_1.png](images/ch07/img_6.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판      
+````
+http://localhost:8080/v1/organization/e6a625cc1718b-48c2-ac76-1dfdff9a531e/license/
+````
+### 7.5.1 조직 서비스에 회로 차단기 추가 
+![img_1.png](images/ch07/img_8.png)    
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch07/img_7.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
-### 7.5.1 조직 서비스에 회로 차단기 추가
 ### 7.5.2 회로 차단기 사용자 정의
-
+````yaml
+resilience4j.circuitbreaker:
+  instances:
+    licenseService: #라이선싱 서비스의 인스턴스 구성(회로 차단기 애너테이션 이름과 동일)
+      registerHealthIndicator: true #상태 정보 엔드포인트 구성 정보 노출여부
+      ringBufferSizeInClosedState: 5  # 링 버퍼의 닫힌 크기 설정(최근 5개의 요청을 추적)
+      ringBufferSizeInHalfOpenState: 3  # 링 버퍼의 반열린 상태 크기 설정(Half-Open 상태에서 테스트할 요청 수)
+      waitDurationInOpenState: 10s  # 열린 상태의 대기시간 설정(기본 60초)
+      failureRateThreshold: 50  # 실패율 임계치
+      recordExceptions: # 실패로 기록될 예외 설정
+        - org.springframework.web.client.HttpServerErrorException
+        - java.io.IOException
+        - java.util.concurrent.TimeoutException
+        - org.springframework.web.client.ResourceAccessException
+    organizationService:  # 조직 서비스 인스턴스 구성
+      registerHealthIndicator: true
+      ringBufferSizeInClosedState: 6
+      ringBufferSizeInHalfOpenState: 4
+      waitDurationInOpenState: 20s
+      failureRateThreshold: 60
+````
 ## 7.6 폴백 처리
 ## 7.7 벌크헤드 패턴 구현
 ## 7.8 재시도 패턴 구현

@@ -22,7 +22,10 @@ public class OrganizationController {
 
 
     @RequestMapping(value="/{organizationId}",method = RequestMethod.GET)
-    public ResponseEntity<Organization> getOrganization( @PathVariable("organizationId") String organizationId) {
+    public ResponseEntity<Organization> getOrganization( @PathVariable("organizationId") String organizationId) throws Exception {
+        if(1==1){
+            throw new Exception();
+        }
         return ResponseEntity.ok(service.findById(organizationId));
     }
 
