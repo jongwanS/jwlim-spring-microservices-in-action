@@ -153,8 +153,64 @@ resilience4j.circuitbreaker:
 ````
 ## 7.6 폴백 처리
 - 서비스 실패를 가로채서 다른 대앙은 취할 수 있다. => 폴백 전략이라 부름.
-- 
+  - ````@CircuitBreaker(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")````
+  - Resilience4j가 호출을 중단할 때 대신 호출할 메서드 이름을 메서드로 정의 한다.
+> **폴백 전략**
+> - 서비스 호출 실패 => 폴백 함수에 아무 내용도 없을경우, 서비스 단에서 예외를 잡아 **로깅 처리**를 해야 한다. 
+> - 폴백 함수에서, 다른 분산 서비스를 호출할때, 또 다른 서킷브레이커를 설정할 수 있다. 하지만 실패가 **2차 폴백에서도 발생**할 수 있음을 고려해야 한다.  
+
+[폴백 결과]  
+![img_1.png](images/ch07/img_9.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
 ## 7.7 벌크헤드 패턴 구현
+- 마이크로서비스는 여러 서비스를 호출하므로, 벌크헤드 패턴을 사용하지 않으면 **하나의 서비스로 인해 전체 컨테이너 스레드가 부족**해질 수 있다.
+- Resilience4j는 벌크헤드 패턴의 두 가지 다른 구현을 제공한다.
+  - **세마포어 벌크헤드**
+    - 서비스에 대한 동시 요청수를 제한한다. => 한계에 도달하면 요청을 거부한다.
+  - **스레드 풀 벌크헤더**
+    - 제한된 큐, 고정 스레드 풀 사용 => 풀과 큐가 꽉찬경우, 요청을 거부한다.
+- `Resilience4j`는 기본적으로 **세마포어 벌크헤드 타입을 사용**한다.
+
+[세마포어 벌크헤드]  
+- 액세스하는 원격 자원의 수가 적고, 서비스에 대한 호출량이 상대적으로 고를때 잘 작동한다.
+![img_1.png](images/ch07/img_10.png)   
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판      
+[스레드 풀  벌크헤드]    
+![img_1.png](images/ch07/img_11.png)      
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+````yaml
+resilience4j.bulkhead:
+  instances:
+    bulkheadLicenseService:
+      maxWaitDuration: 2ms  # 스레드를 차단할 최대 시간(기본 0)
+      maxConcurrentCalls: 20  # 최대 동시 호출 수(기본 25)
+
+
+resilience4j.thread-pool-bulkhead:
+  instances:
+    bulkheadLicenseService:
+      maxThreadPoolSize: 3  # 스레드 풀에서 최대 스레드 수(작업량 증가 시 최대 1개까지 확장 가능 이라는 의미)
+      coreThreadPoolSize: 1 # 코어 스레드 풀 크키(최소 1개 스레드는 항상 유지)
+      queueCapacity: 1  #큐 용량(기본값 100)
+      keepAliveDuration: 20ms #태스크를 기다리는 최대시간
+````
+**[스레드풀 벌크헤드 옵션 시나리오 예제]**  
+- 가정: 4개의 작업이 순서대로 들어오는 경우  
+
+| 작업 | 코어 스레드 상태 | 큐 상태  | 추가 스레드 상태 | 작업 처리 방식                         |
+|------|------------------|----------|------------------|----------------------------------------|
+| 1    | 처리 중 (1/1)    | 비어있음 | 없음             | 코어 스레드에서 처리                  |
+| 2    | 처리 중 (1/1)    | 1/1      | 없음             | 큐에 추가                              |
+| 3    | 처리 중 (1/1)    | 가득 참  | 1/2 (새로 생성)  | 새로 생성된 추가 스레드가 처리         |
+| 4    | 처리 중 (1/1)    | 가득 참  | 2/2 (새로 생성)  | 새로 생성된 추가 스레드가 처리         |
+| 5    | 처리 중 (1/1)    | 가득 참  | 가득 참 (2/2)    | 거부 정책에 따라 처리 (예외 발생 가능) |
+
+- **@Bulkhead 설정**  
+  - `세마포어` : @Bulkhead(name = "bulkheadLicenseService", fallbackMethod = "buildFallbackLicenseList")
+  - `스레드풀` : @Bulkhead(name = "bulkheadLicenseService", type= Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
+
 ## 7.8 재시도 패턴 구현
 ## 7.9 속도 제한기 패턴구현
 ## 7.10 ThreadLocal과 Resilience4
