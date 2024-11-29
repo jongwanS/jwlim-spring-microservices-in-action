@@ -212,10 +212,76 @@ resilience4j.thread-pool-bulkhead:
   - `스레드풀` : @Bulkhead(name = "bulkheadLicenseService", type= Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
 
 ## 7.8 재시도 패턴 구현
-## 7.9 속도 제한기 패턴구현
-## 7.10 ThreadLocal과 Resilience4
-## 7.11 요약
+- 서비스가 처음 실패했을 때 `서비스`와 **통신을 재시도** 하는 역할을 한다.
+  - `재시도 횟수`와 `재시도 사이에 간격`을 **지정**해야 한다.
 
-
-![img_1.png](images/ch07/img.png)  
+````yaml
+resilience4j.retry:
+  instances:
+    retryLicenseService:
+      maxRetryAttempts: 5 # 재시도 최대 횟수
+      waitDuration: 10000 # 재시도 간 대기 시
+      retry-exceptions: # 재시도 되는 예외 목록 지정
+        - java.util.concurrent.TimeoutException
+        - java.io.IOException  
+      ignoreExceptions:
+        - java.lang.IllegalArgumentException # 해당 오류가 나면, 재시도X
+      retryOnResultPredicate: response -> response.statusCode() == 500 # 응답값이 500 이면 재시도
+      retryOnExceptionPredicate: exception -> exception.message.contains("Timeout") # 에러 항목에 타임아웃 메시지가 포함되면 재시도
+      intervalFunction: exponentialRandomBackoff # 대기 시간이 점진적으로 증가.
+````
+````java
+@Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList");
+````
+````
+http://localhost:8080/v1/organization/d898a142-de44-466c-8c88-9ceb2c2429d3/license/
+````
+![img_1.png](images/ch07/img_12.png)  
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+## 7.9 속도 제한기 패턴구현
+- Resilience4j는 속도 제한기 패턴을 위해 `AtomicRateLimiter`와 `SemaphoreBasedRateLimiter` 두가지 구현체를 제공한다.
+  - 
+````yaml
+resilience4j.ratelimiter:
+  instances:
+    licenseService:
+      timeoutDuration: 1000ms # 스레드 허용 가능 상태를 기다림, 1초(기본 5000ms)
+      limitRefreshPeriod: 5000  # 5초마다 허용 수 갱신(500ns)
+      limitForPeriod: 5 # 5초 동안 최대 5개의 요청 허용
+````
+````
+- 5초 동안 요청:
+  > 초기 상태: 5개의 요청 허용 가능.
+  > 요청 1~5: 즉시 처리됨.
+  > 요청 6: 대기 상태로 들어감 (1초 동안 허용 가능 상태를 기다림).
+  > 요청 7: 대기 시간이 초과하면 RequestNotPermitted 예외 발생.
+- 5초 이후: 요청 제한이 갱신되고 다시 5개의 요청 허용 가능.
+````
+
+````java
+@RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList");
+````
+
+![img_1.png](images/ch07/img_13.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+## 7.10 ThreadLocal과 Resilience4
+- 자바 ThreadLocal 을 사용하면 동일한 스레드에서만 읽고 쓸 수 있는 변수를 생성할 수 있다.
+  - HTTP 헤더에 상관관계ID나 인증 토큰을 전달할 수 있다.
+  - 해당 인증 토큰을 다운스트림 서비스호출로 전파할 수 있다.
+![img_1.png](images/ch07/img_14.png)   
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+## 7.11 요약
+- 고도로 분산된 애플리케이션을 설계할 때는 **클라이언트 회복성을 고려**해야 한다.
+- 성능이 낮은 서비스 하나가 자원을 소진 하는 연쇄효과를 유발 할 수 있다
+- 세 가지 핵심 클라이언트 회복성 패턴은 회로 `차단기 패턴`, `폴백 패턴`, `벌크헤드 패턴`
+  - 회로 차단기 패턴은 느리게 수행되고 저하된 **시스템 호출을 제거** => 빨리 실패하고, 자원 소진을 막는다.
+  - 폴백패턴는 서비스 호출이 실패할때, **대체 코드 경로** 를 정의한다.
+  - 벌크헤드패턴은 자체 스레드풀로 격리 해서 **원격 자원호출을 서로 분리**한다.
+
+> 질문거리
+> - 서킷, 벌크헤드, 리트라이, 속도제한 등 순서를 정할 수 있는가?
+> - 스레드로컬 remove 를 무조건 해줘야 하나?? => requetScope?
+> - 

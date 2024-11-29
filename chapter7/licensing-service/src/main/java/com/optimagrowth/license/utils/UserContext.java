@@ -1,8 +1,10 @@
 package com.optimagrowth.license.utils;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.RequestScope;
 
 @Component
+//@RequestScope
 public class UserContext {
     public static final String CORRELATION_ID = "tmx-correlation-id";
     public static final String AUTH_TOKEN     = "tmx-auth-token";

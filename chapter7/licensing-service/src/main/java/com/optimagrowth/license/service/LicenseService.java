@@ -116,18 +116,22 @@ public class LicenseService {
 
 //	 @CircuitBreaker(name = "licenseService")	//코드 7-2의 경우 이 애너테이션만 추가한다.
 	@CircuitBreaker(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
-//	@RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
-//	@Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList")
-	@Bulkhead(name = "bulkheadLicenseService", type= Type.THREADPOOL, fallbackMethod = "buildFallbackLicenseList")
+	@RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
+	@Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList")
+	@Bulkhead(name = "bulkheadLicenseService", type= Type.SEMAPHORE, fallbackMethod = "buildFallbackLicenseList")//Type.THREADPOOL
 	public List<License> getLicensesByOrganization(String organizationId) throws TimeoutException {
-		logger.debug("getLicensesByOrganization Correlation id: {}",
-				UserContextHolder.getContext().getCorrelationId());
+		logger.info("getLicensesByOrganization Correlation id: {}",
+			UserContextHolder.getContext().getCorrelationId());
 		randomlyRunLong();
 		return licenseRepository.findByOrganizationId(organizationId);
 	}
 
 	@SuppressWarnings("unused")
 	private List<License> buildFallbackLicenseList(String organizationId, Throwable t){
+		if (t instanceof TimeoutException) {
+			return buildFallbackRetryLicenseList(organizationId, t);
+		}
+
 		List<License> fallbackList = new ArrayList<>();
 		License license = new License();
 		license.setLicenseId("0000000-00-00000");
@@ -136,6 +140,17 @@ public class LicenseService {
 		fallbackList.add(license);
 		return fallbackList;
 	}
+	private List<License> buildFallbackRetryLicenseList(String organizationId, Throwable t){
+		List<License> fallbackList = new ArrayList<>();
+		License license = new License();
+		license.setLicenseId("0000000-00-00000");
+		license.setOrganizationId(organizationId);
+		license.setProductName("Retry ::: Sorry no licensing information currently available");
+		fallbackList.add(license);
+		return fallbackList;
+	}
+
+
 
 	private void randomlyRunLong() throws TimeoutException{
 		Random rand = new Random();
