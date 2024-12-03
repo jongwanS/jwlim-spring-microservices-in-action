@@ -88,11 +88,55 @@ public class ApiGatewayServerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ApiGatewayServerApplication.class, args);
 	}
-
 }
-
 ````
 ## 8.3 스프링 클라우드 게이트웨이에서 라우팅 구성
+- `스프링 클라우드 게이트웨이`는 본래 **리버스 프록시**다.
+  - 리버스 프록시 : 자원에 도달하려는 클라이언트와 자원 사이에 위치한 중개 서버
+- 상위 서비스와 통신하려면 `게이트웨이`는 **유입된 호출이 상위 경로에 매핑하는 방법을 알아야** 한다.
+- 스프링 클라우드 게이트웨이에서 제공하는 매커니즘
+  - `서비스 디스커버리를 이용한 자동 경로 매핑`
+  - `서비스 디스커버리를 이용한 수동 경로 매핑`
+### 8.3.1 서비스 디스커버리를 이용한 자동 경로 매핑
+````yaml
+spring:
+  cloud:
+    gateway:
+      discovery.locator:  # 서비스 디스커버리에 등록된 서비스를, 게이트웨이가 경로를 생성하도록 설정
+        enabled: true
+        lowerCaseServiceId: true
+````
+![img_1.png](images/ch08/img_4.png)   
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch08/img_2.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
+![img_1.png](images/ch08/img_3.png)  
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
+
+### 8.3.2 서비스 디스커버리를 이용한 수동 경로 매핑
+````yaml
+spring:
+  cloud:
+    loadbalancer.ribbon.enabled: false
+    gateway:
+      discovery.locator:
+        enabled: true
+        lowerCaseServiceId: true
+      routes:
+      - id: organization-service
+        uri: lb://organization-service
+        predicates:
+        - Path=/organization/**
+        filters:
+        - RewritePath=/organization/(?<path>.*), /$\{path}
+````
+![img_1.png](images/ch08/img_5.png)   
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch08/img_6.png)     
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+### 8.3.3 동적으로 라우팅 구성을 재로딩
+- 게이트웨이 서버의 재시작 없이 경로 매핑을 변경할 수 있기 때문에 유용하다.
+- 깃이나 외부 설정을 변경후, `POST : http://localhost:8072/actuator/gateway/refresh` 요청하면 가능하다.
 ## 8.4 스프링 클라우드 게이트웨이의 진정한 능력: Predicate과 Filter Factories
 ## 8.5 사전 필터 만들기
 ## 8.6 서비스에서 상관관계 ID 사용
