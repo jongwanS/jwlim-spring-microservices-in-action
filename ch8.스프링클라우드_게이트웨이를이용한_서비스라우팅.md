@@ -138,9 +138,19 @@ spring:
 - 게이트웨이 서버의 재시작 없이 경로 매핑을 변경할 수 있기 때문에 유용하다.
 - 깃이나 외부 설정을 변경후, `POST : http://localhost:8072/actuator/gateway/refresh` 요청하면 가능하다.
 ## 8.4 스프링 클라우드 게이트웨이의 진정한 능력: Predicate과 Filter Factories
+### 8.4.1 게이트웨이 Predicate Factories
+### 8.4.2 게이트웨이 Filter Factories
+### 8.4.3 사용자 정의 필터
+
 ## 8.5 사전 필터 만들기
+
 ## 8.6 서비스에서 상관관계 ID 사용
+### 8.6.1 유입되는 HTTP 요청을 가로채는 UserContextFilter
+### 8.6.2 서비스에 쉽게 액세스할 수 있는 HTTP 헤더를 만드는 UserContext
+### 8.6.3 상관관계 ID 전파를 위한 사용자 정의 RestTemplate과 UserContextInterceptor
+
 ## 8.7 상관관계 ID를 수신하는 사후 필터 작성
+
 ## 8.8 요약
 
 
