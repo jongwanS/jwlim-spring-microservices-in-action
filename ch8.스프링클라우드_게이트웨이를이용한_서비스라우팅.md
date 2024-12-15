@@ -333,4 +333,12 @@ public class ResponseFilter {
 ![img_1.png](images/ch08/img_13.png)             
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
+
+[게이트웨이 -> 라이센스 -> 조직]
+![img_1.png](images/ch08/img_16.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
+![img_1.png](images/ch08/img_17.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
+![img_1.png](images/ch08/img_18.png)               
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판   
 ## 8.8 요약
