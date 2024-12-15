@@ -170,18 +170,167 @@ spring:
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
 ## 8.5 사전 필터 만들기
+- 게이트웨이로 유입되는 모든 요청을 검사
+  - 요청에서 `tmx-correlation-id`라는 `HTTP 헤더의 포함 여부를 확인`하는 TrackingFilter라는 사전 필터생성
+  - `tmx-correlation-id`는 헤더에는 여러 마이크로 서비스를 거쳐 사용자 요청을 추적하는 데 사용되는 고유한 `GUID`가 포함된다.
+- 스프링 클라우드 게이트웨이에서 `글로벌 필터를 생성`하려면 **GlobalFilter 클래스를 구현한 후 filter() 메서드를 재정의**
+````java
+@Component
+public class TrackingFilter implements GlobalFilter {
+  ...
+  
+  @Override
+  public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    HttpHeaders requestHeaders = exchange.getRequest().getHeaders();
+    if (isCorrelationIdPresent(requestHeaders)) {
+      logger.debug("tmx-correlation-id found in tracking filter: {}. ",
+              filterUtils.getCorrelationId(requestHeaders));
+    } else {
+      String correlationID = generateCorrelationId();
+      exchange = filterUtils.setCorrelationId(exchange, correlationID);
+      logger.debug("tmx-correlation-id generated in tracking filter: {}.", correlationID);
+    }
+
+    return chain.filter(exchange);
+  }
+}
+````
 
 ## 8.6 서비스에서 상관관계 ID 사용
-### 8.6.1 유입되는 HTTP 요청을 가로채는 UserContextFilter
-### 8.6.2 서비스에 쉽게 액세스할 수 있는 HTTP 헤더를 만드는 UserContext
-### 8.6.3 상관관계 ID 전파를 위한 사용자 정의 RestTemplate과 UserContextInterceptor
+[공통 클래스들을 사용하여 상관관계 ID를 하위 서비스 호줄에 전파]  
+![img_1.png](images/ch08/img_12.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
+- **UserContextFilter**
+  - HTTP 헤더에서 상관관계 ID를 추출하여 `UserContext 객체에 저장`
+- **UserContext**
+  - 서비스 비즈니스 로직은 UserContext에서 조회한 `모든 값에 액세스`
+- **UserContext Interceptor**
+  - 모든 아웃바운드 REST 호출에 `UserContext의 상관관계 ID가 포함되었는지 확인`
+
+> **중복된 코드 VS. 공유 라이브러리**
+> - 마이크로서비스 순수주의자들은 서비스 전반에 걸쳐 사용자 정의 프레임워크를 사용 하면 인위적으로 종속되기 때문에 사용하면 안 된다고 주장
+> - 마이크로서비스 실무자들은 공유 라이브러리 를 만들어 서비스 간 공유해야 하는 특정 상황(UserContextFilter 예와 같은)이 존재하기 때문에 순수주의 자들의 접근 방식은 실용적이지 않다고 반론
+
+### 8.6.1 유입되는 HTTP 요청을 가로채는 UserContextFilter
+- 서비스로 들어오는 모든 HTTP 요청을 가로채고, **HTTP 요청에서 사용자 컨텍스트 클래스로 상관관계 ID를 매핑하는 HTTP 서블릿 필터**
+````java
+@Component
+public class UserContextFilter implements Filter {
+  
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+        //헤더에서상관계ID를정의, UserContext에 값을 설정
+        UserContextHolder.getContext().setCorrelationId(  httpServletRequest.getHeader(UserContext.CORRELATION_ID) );
+        UserContextHolder.getContext().setUserId(httpServletRequest.getHeader(UserContext.USER_ID));
+        UserContextHolder.getContext().setAuthToken(httpServletRequest.getHeader(UserContext.AUTH_TOKEN));
+        UserContextHolder.getContext().setOrganizationId(httpServletRequest.getHeader(UserContext.ORGANIZATION_ID));
+
+        logger.debug("UserContextFilter Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
+
+        filterChain.doFilter(httpServletRequest, servletResponse);
+    }
+}
+````
+### 8.6.2 서비스에 쉽게 액세스할 수 있는 HTTP 헤더를 만드는 UserContext
+- `UserContext 클래스`는 마이크로서비스가 처리하는 **각 서비스 클라이언트 요청의 HTTP 헤더 값 을 보관**
+
+````java
+@Component
+public class UserContext {
+  public static final String CORRELATION_ID = "tmx-correlation-id";
+  public static final String AUTH_TOKEN = "tmx-auth-token";
+  public static final String USER_ID = "tmx-user-id";
+  public static final String ORGANIZATION_ID = "tmx-organization-id";
+  ...
+}
+
+//사용자 요청을 처리하는 해당 스 레드에서 호출하는 모든 메서드에 접근 가능한 ThreadLocal 변수에 UserContext를 저장
+public class UserContextHolder {
+    private static final ThreadLocal<UserContext> userContext = new ThreadLocal<UserContext>();
+
+    public static final UserContext getContext(){
+        UserContext context = userContext.get();
+        if (context == null) {
+            context = createEmptyContext();
+            userContext.set(context);
+
+        }
+        return userContext.get();
+    }
+
+    public static final UserContext createEmptyContext(){
+        return new UserContext();
+    }
+}
+````
+### 8.6.3 상관관계 ID 전파를 위한 사용자 정의 RestTemplate과 UserContextInterceptor
+- UserContextInterceptor 클래스는 `모든 HTTP 기반 서비스 발신 요청에 상관관계 ID를 주입`
+````java
+public class UserContextInterceptor implements ClientHttpRequestInterceptor {
+    private static final Logger logger = LoggerFactory.getLogger(UserContextInterceptor.class);
+    @Override
+    public ClientHttpResponse intercept(
+            HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+            throws IOException {
+
+        HttpHeaders headers = request.getHeaders();
+        headers.add(UserContext.CORRELATION_ID, UserContextHolder.getContext().getCorrelationId());
+        headers.add(UserContext.AUTH_TOKEN, UserContextHolder.getContext().getAuthToken());
+
+        return execution.execute(request, body);
+    }
+}
+
+public class LicenseServiceApplication {
+  @LoadBalanced
+  @Bean
+  public RestTemplate getRestTemplate(){
+    RestTemplate template = new RestTemplate();
+    List interceptors = template.getInterceptors();
+    if (interceptors==null){
+      //resttemplate에 등록
+      template.setInterceptors(Collections.singletonList(new UserContextInterceptor()));
+    }
+    else{
+      interceptors.add(new UserContextInterceptor());
+      template.setInterceptors(interceptors);
+    }
+
+    return template;
+  }
+}
+````
 ## 8.7 상관관계 ID를 수신하는 사후 필터 작성
+````java
+@Configuration
+public class ResponseFilter {
+ 
+    final Logger logger =LoggerFactory.getLogger(ResponseFilter.class);
+    
+    @Autowired
+	FilterUtils filterUtils;
+ 
+    @Bean
+    public GlobalFilter postGlobalFilter() {
+        return (exchange, chain) -> {
+            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            	  HttpHeaders requestHeaders = exchange.getRequest().getHeaders();
+            	  String correlationId = filterUtils.getCorrelationId(requestHeaders);
+            	  logger.info("Adding the correlation id to the outbound headers. {}", correlationId);
+                  exchange.getResponse().getHeaders().add(FilterUtils.CORRELATION_ID, correlationId);
+                  logger.info("Completing outgoing request for {}.", exchange.getRequest().getURI());
+              }));
+        };
+    }
+}
+````
+![img_1.png](images/ch08/img_14.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch08/img_15.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+![img_1.png](images/ch08/img_13.png)             
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 
 ## 8.8 요약
-
-
-
-
-![img_1.png](images/ch08/img.png)  
-출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판    
