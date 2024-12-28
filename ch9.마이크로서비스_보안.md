@@ -119,8 +119,3 @@ http://localhost:8080/realms/spmia-realm/protocol/openid-connect/token
 ## 9.5 마이크로서비스 보안을 마치며
 ## 9.6 요약
 
-[게이트웨이 -> 라이센스 -> 조직]
-![img_1.png](images/ch08/img_16.png)             
-![img_1.png](images/ch08/img_17.png)             
-![img_1.png](images/ch08/img_18.png)               
-## 8.8 요약
