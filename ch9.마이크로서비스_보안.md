@@ -110,9 +110,44 @@ http://localhost:8080/realms/spmia-realm/protocol/openid-connect/token
 ![img_1.png](images/ch09/img_7.png)  
 
 ## 9.4 키클록으로 조직 서비스 보호하기
+- 키클록 서버 : 토큰의 생성 및 관리
+  - 스프링 시큐리티 & 스프링 부트 어댑터 : 자원 보호, 권한 부여
 ### 9.4.1 스프링 시큐리티와 키클록 JARs를 서비스에 추가
+````xml
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-spring-boot-starter</artifactId> <!-- 키클록 스프링 부트 의존성 -->
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId> <!-- 스프링 시큐리티 스타터 의존성 -->
+</dependency>
+...
+<dependency>
+    <groupId>org.keycloak.bom</groupId>
+    <artifactId>keycloak-adapter-bom</artifactId>   <!-- 키클록 스프링 부트 의존성 관리 -->
+    <version>11.0.2</version>
+    <type>pom</type>
+    <scope>import</scope>
+</dependency>
+````
 ### 9.4.2 키클록 서버 접속을 위한 서비스 구성
+````yaml
+keycloak.realm = spmia-realm  # 생성된 realm 이름
+keycloak.auth-server-url = http://localhost:8080/auth # 키클록 서버 URL 인증 엔드포인트
+keycloak.ssl-required = external
+keycloak.resource = ostock  # 생성된 클라이언트 ID
+keycloak.credentials.secret = 5988f899-a5bf-4f76-b15f-f1cd0d2c81ba # 생성된 클라이언트 시크릿
+keycloak.use-resource-role-mappings = true
+keycloak.bearer-only = true
+````
 ### 9.4.3 서비스에 접근할 수 잇는 사용자 및 대상 정의
+
+````java
+
+````
+[인증된 사용자로 서비스 보호]
+[특정 역할을 이용한 서비스 보호]
 ### 9.4.4 액세스 토큰 전파
 ### 9.4.5 JWT의 사용자 정의 필드 파싱
 
