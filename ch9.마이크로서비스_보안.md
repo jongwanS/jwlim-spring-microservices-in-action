@@ -137,18 +137,81 @@ keycloak.realm = spmia-realm  # 생성된 realm 이름
 keycloak.auth-server-url = http://localhost:8080/auth # 키클록 서버 URL 인증 엔드포인트
 keycloak.ssl-required = external
 keycloak.resource = ostock  # 생성된 클라이언트 ID
-keycloak.credentials.secret = 5988f899-a5bf-4f76-b15f-f1cd0d2c81ba # 생성된 클라이언트 시크릿
+keycloak.credentials.secret = f7TPP6ef5jK7p1VhsDPUbkmkzvBZHerg # 생성된 클라이언트 시크릿
 keycloak.use-resource-role-mappings = true
 keycloak.bearer-only = true
 ````
 ### 9.4.3 서비스에 접근할 수 잇는 사용자 및 대상 정의
-
+- 서비스에 대한 접근 제어 규칙 정의
+  - 
 ````java
+@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(jsr250Enabled = true)   //@RoleAllowed 활성화처리
+public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
+    @Override
+    protected void configure(HttpSecurity http) throws Exception { //Keycloak 인증제공재 등록
+      super.configure(http);
+      http.authorizeRequests()
+              .anyRequest().authenticated();
+      http.csrf().disable();
+    }
+  
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception { // AuthenticationProvider 정의
+      KeycloakAuthenticationProvider keycloakAuthenticationProvider = keycloakAuthenticationProvider();
+      keycloakAuthenticationProvider.setGrantedAuthoritiesMapper(new SimpleAuthorityMapper());
+      auth.authenticationProvider(keycloakAuthenticationProvider);
+    }
+  
+    @Bean
+    @Override
+    protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {   // 세션인증 전략 정의
+      return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
+    }
+  
+    @Bean
+    public KeycloakConfigResolver KeycloakConfigResolver() {
+      return new KeycloakSpringBootConfigResolver();
+    }
+}
 ````
+- `KeycloakWebSecurityConfigurerAdapter` 클래스 메서드들 재정의
+  - configure
+  - configureGlobal
+  - sessionAuthenticationStrategy
+  - KeycloakConfigResolver
+
+- 이장에서 실습할 자원 보호 항목
+  - `인증된 사용자`만 사용자 서비스 URL에 접근
+  - `특정 역할`을 가진 사용자만 서비스 URL에 접근
+
 [인증된 사용자로 서비스 보호]
+````java
+    @Override
+    protected void configure(HttpSecurity http) throws Exception { //Keycloak 인증제공재 등록
+      super.configure(http);
+      http.authorizeRequests()
+              .anyRequest().authenticated();
+      http.csrf().disable();
+    }
+````
+- 인증되지 않은 사용자는 URL 접근 불가  
+![img_1.png](images/ch09/img_8.png)  
+- illary.huaylupo 토큰 발급    
+![img_1.png](images/ch09/img_10.png)   
+- 인증된 사용자 URL 접근     
+![img_1.png](images/ch09/img_9.png)  
+
 [특정 역할을 이용한 서비스 보호]
+- john.carnell 키클록 openid-connect 토큰발급
+![img_1.png](images/ch09/img_11.png)  
+- USER 역할은 조직 삭제 불가
+![img_1.png](images/ch09/img_12.png)  
+
 ### 9.4.4 액세스 토큰 전파
+- 
 ### 9.4.5 JWT의 사용자 정의 필드 파싱
 
 ## 9.5 마이크로서비스 보안을 마치며
