@@ -211,7 +211,71 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 ![img_1.png](images/ch09/img_12.png)  
 
 ### 9.4.4 액세스 토큰 전파
-- 
+- 라이선싱 서비스 -> 조직 서비스를 호출
+  - 액세스 토큰 전파 필요
+![img_1.png](images/ch09/img_13.png)               
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+
+[라이선싱 서비스 구성]  
+- 액세스 토큰을 전파할 때 첫 번째 단계는 메이븐 의존성 추가
+````xml
+		<dependency>
+		    <groupId>org.keycloak</groupId>
+		    <artifactId>keycloak-spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+        ....
+        <dependency>
+          <groupId>org.keycloak.bom</groupId>
+          <artifactId>keycloak-adapter-bom</artifactId>
+          <version>11.0.2</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+````
+- 스프링 시큐리티가 없다면 라이선싱 서비스에 유입되는 호출에서 라이선싱 서비스의 모든 아웃바운드 호출에 수작업으로 헤더를 추가해야함.
+  - 키클록은 이러한 호출을 지원하는 새로운 REST 템플릿 클래스인 `KeycloakRestTemplate`을 제공
+````java
+@Configuration
+@EnableWebSecurity
+@ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
+public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
+
+	@Autowired
+	public KeycloakClientRequestFactory keycloakClientRequestFactory;
+    
+    ...
+  
+	@Bean
+	@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+	public KeycloakRestTemplate keycloakRestTemplate() {
+		return new KeycloakRestTemplate(keycloakClientRequestFactory);
+	}
+}
+````
+````java
+@Component
+public class OrganizationRestTemplateClient {
+    
+    @Autowired
+    private KeycloakRestTemplate restTemplate;
+
+    public Organization getOrganization(String organizationId){
+        ResponseEntity<Organization> restExchange = 
+                restTemplate.exchange(
+                   "http://localhost:8072/organization/v1/organization/{organizationId}",
+                   HttpMethod.GET,
+                   null, Organization.class, organizationId);
+
+        return restExchange.getBody();
+    }
+}
+````
+![img_1.png](images/ch09/img_14.png)               
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 ### 9.4.5 JWT의 사용자 정의 필드 파싱
 
 ## 9.5 마이크로서비스 보안을 마치며
