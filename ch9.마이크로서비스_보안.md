@@ -15,14 +15,38 @@
   - **키클록**(ID 및 액세스 관리)
 
 ## 9.1 OAuth2소개
+- `OAuth2`는 **토큰 기반의 보안 프레임워크**
 - 사용자는 `ID 제공자` 라고 하는 `제삼자 인증 서비스`로 **자신을 인증**
 - 사용자는 인증에 성공하면 모든 요청과 함께 전달할 토큰을 제공받고 인증 서비스에 이 **토큰의 유효성을 확인**
 - 요청을 처리하는 모든 서비스에 자격 증명을 제시하지 않고도 **각 서비스에서 사용자를 인증**
-- OAuth2 명세에는 네 가지 그랜트 타입
-  - 패스워드
-  - 클라이언트 자격 증명
-  - 인가 코드
-  - 암시적
+- JWT를 사용하여 `더욱 안전한 OAuth2 솔루션을 제공`
+- **OAuth2 명세에는 네 가지 그랜트 타입**
+  - **패스워드(password)**
+    - 클라이언트 애플리케이션이 사용자로부터 직접 사용자 이름과 비밀번호를 받아 인증 서버에 전달하여 Access Token을 발급받는 방식
+  - **클라이언트 자격 증명(client credential)**
+    - **클라이언트 애플리케이션 자체를 인증**하여 Access Token을 발급받는 방식
+    - 클라이언트 애플리케이션이 인증 서버에 `client_id`와 `client_secret`을 전송, 인증 서버는 클라이언트를 검증하고 Access Token 발급
+  - **인가 코드(authorization code)** => 가장 널리 사용되는 방식이다.
+    - 클라이언트 애플리케이션이 사용자를 인증 서버로 리디렉션하고, 인증 후 발급받은 인가 코드를 사용해 Access Token을 교환하는 방식
+  - **암시적(implicit)** => 권장되지 않음
+    - Access Token을 바로 발급받는 방식, 클라이언트 애플리케이션이 서버가 아닌 브라우저 기반에서 동작할 때 사용.
+
+### OAuth 2.0 Grant Types 비교 요약
+
+| Grant Type         | 사용 사례                                  | 보안 수준  | 주요 특징                                          |
+|---------------------|-------------------------------------------|------------|---------------------------------------------------|
+| Password           | 신뢰할 수 있는 앱 내부 사용자 인증         | 낮음       | 사용자 자격 증명을 직접 처리                      |
+| Client Credentials | 서버 간 통신 또는 시스템 계정 사용         | 높음       | 사용자 관여 없이 클라이언트 자체 인증             |
+| Authorization Code | 보안이 중요한 사용자 인증 (웹/모바일 앱)  | 매우 높음   | Refresh Token과 함께 사용 가능                   |
+| Implicit           | 브라우저 기반 SPA                         | 낮음       | Access Token 직접 발급. 보안 이슈로 사용 줄어듦. |
+
+---
+
+#### **권장 사항**
+- **Authorization Code** 방식이 가장 널리 사용되며, 보안이 중요한 대부분의 애플리케이션에 적합합니다.
+- **Implicit** 방식은 보안 이슈로 인해 대체로 권장되지 않으며, PKCE(Proof Key for Code Exchange)와 같은 보안 강화 기법과 결합해 사용합니다.
+
+
 - OAuth2의 진정한 강점
   - 애플리케이션 개발자가 제삼자 ID 제공자와 쉽게 통합
   - 자격증명을 제삼자 서비스에 계속 전달하지 않고도 해당 서비스에서 사용자를 인증하고 인가
@@ -277,7 +301,48 @@ public class OrganizationRestTemplateClient {
 ![img_1.png](images/ch09/img_14.png)               
 출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
 ### 9.4.5 JWT의 사용자 정의 필드 파싱
+````java
+	private String getUsername(HttpHeaders requestHeaders){
+		String username = "";
+		if (filterUtils.getAuthToken(requestHeaders)!=null){
+			String authToken = filterUtils.getAuthToken(requestHeaders).replace("Bearer ","");
+	        JSONObject jsonObj = decodeJWT(authToken);
+	        try {
+	        	username = jsonObj.getString("preferred_username");
+	        }catch(Exception e) {logger.debug(e.getMessage());}
+		}
+		return username;
+	}
 
+	private JSONObject decodeJWT(String JWTToken) {
+		String[] split_string = JWTToken.split("\\.");
+		String base64EncodedBody = split_string[1];
+		Base64 base64Url = new Base64(true);
+		String body = new String(base64Url.decode(base64EncodedBody));
+		JSONObject jsonObj = new JSONObject(body);
+		return jsonObj;
+	}
+````
+![img_1.png](images/ch09/img_15.png)  
 ## 9.5 마이크로서비스 보안을 마치며
-## 9.6 요약
 
+![img_1.png](images/ch09/img_16.png)               
+출처 : 길벗 - 스프링 마이크로서비스 코딩 공작소 개정2판  
+### 9.5.1 모든 서비스 통신에 HTTPS/SSLS 사용하라
+- 운영 환경에서 마이크로서비스는 HTTPS 및 SSL로 제공되는 암호화된 채널로만 통신
+### 9.5.2 서비스 게이트웨이를 사용하여 마이크로서비스에 접근하라
+- 서비스 게이트웨이가 서비스 호출을 위한 진입점 및 게이트키퍼 역할
+- 서비스 게이트웨이의 트래픽만 허용
+  - 서비스를 보호하고 감시하는 방식을 일관된 방식으로 유지할 수 있다.
+### 9.5.3 공개 API 및 비공개 API 영역을 지정하라
+- 보안은 접근 계층을 구축하고 **최소 권한 개념을 적용** 하는것이다.
+- **사용자는 작업을 수행할 수 있는 최소한의 네트워크 접근과 권한**만 가져야 한다
+- **비공개 영역**은 핵심 애플리케이션의 기능 및 데이터를 보호하는 장벽 역할을 한다.
+### 9.5.4 불필요한 네트워크 포트를 차단해서 마이크로서비스 공격 지점을 제한하라
+- 서비스에서 필요한 포트나 인프라스트럭처에 대한 인바운드와 아웃 바운드 액세스만 허용해야 한다.
+## 9.6 요약
+- OAuth2는 웹 서비스 호출을 보호하기 위해 다양한 메커니즘을 제공하는 토큰 기반의 인가 (권한 부여) 프레임워크 => 이러한 메커니즘을 **그랜트** 라고 칭함.
+- 애플리케이션마다 키클록 애플리케이션의 고유 이름과 시크릿 키
+- 운영 환경에서는 HTTPS를 사용하여 서비스 간 모든 호출을 암호화
+- 서비스 게이트웨이를 사용하여 서비스에 도달할 수 있는 접근 지점을 줄여야 한다.
+- 서비스가 실행되는 운영 체제의 인바운드 및 아웃바운드 포트 수를 제한해야 한다.
