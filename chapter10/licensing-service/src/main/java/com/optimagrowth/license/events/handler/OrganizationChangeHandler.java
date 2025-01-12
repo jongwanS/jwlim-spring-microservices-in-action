@@ -22,7 +22,7 @@ public class OrganizationChangeHandler {
             case "GET":
                 logger.debug("Received a GET event from the organization service for organization id {}", organization.getOrganizationId());
                 break;
-            case "SAVE":
+            case "CREATED":
                 logger.debug("Received a SAVE event from the organization service for organization id {}", organization.getOrganizationId());
                 break;
             case "UPDATE":

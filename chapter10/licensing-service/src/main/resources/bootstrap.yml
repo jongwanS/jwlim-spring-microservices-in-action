@@ -7,8 +7,11 @@ spring:
       active: dev
     cloud:
         config: 
-            uri: http://configserver:8071
-            
+            uri: http://localhost:8071
+    kafka:
+      bootstrap-servers: http://localhost:29092
+
+
 logging:
   level:
     com.netflix: WARN
