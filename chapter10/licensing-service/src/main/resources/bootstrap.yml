@@ -2,7 +2,9 @@ spring:
     main:
       allow-bean-definition-overriding: true
     application:
-     name: licensing-service 
+      name: "licensing-service"  # 기본 애플리케이션 이름
+      additional-names:
+        - "licensing-service2"  # 추가 이름은 다른 프로퍼티로 관리
     profiles:
       active: dev
     cloud:

@@ -16,7 +16,7 @@ public class OrganizationChangeHandler {
     @StreamListener("inboundOrgChanges")
     public void loggerSink(OrganizationChangeModel organization) {
     	
-        logger.debug("Received a message of type " + organization.getType());
+        logger.debug("inboundOrgChanges Received a message of type " + organization.getType());
         
         switch(organization.getAction()){
             case "GET":
@@ -37,5 +37,28 @@ public class OrganizationChangeHandler {
         }
     }
 
+    @StreamListener("inboundOrgChanges2")
+    public void loggerSink2(OrganizationChangeModel organization) {
+
+        logger.debug("inboundOrgChanges2 Received a message of type " + organization.getType());
+
+        switch(organization.getAction()){
+            case "GET":
+                logger.debug("Received a GET event from the organization service for organization id {}", organization.getOrganizationId());
+                break;
+            case "CREATED":
+                logger.debug("Received a SAVE event from the organization service for organization id {}", organization.getOrganizationId());
+                break;
+            case "UPDATE":
+                logger.debug("Received a UPDATE event from the organization service for organization id {}", organization.getOrganizationId());
+                break;
+            case "DELETE":
+                logger.debug("Received a DELETE event from the organization service for organization id {}", organization.getOrganizationId());
+                break;
+            default:
+                logger.error("Received an UNKNOWN event from the organization service of type {}", organization.getType());
+                break;
+        }
+    }
 
 }

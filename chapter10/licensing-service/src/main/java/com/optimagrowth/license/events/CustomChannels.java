@@ -7,5 +7,7 @@ public interface CustomChannels {
 	
     @Input("inboundOrgChanges")
     SubscribableChannel orgs();
-    
+
+    @Input("inboundOrgChanges2")
+    SubscribableChannel orgs2();
 }
