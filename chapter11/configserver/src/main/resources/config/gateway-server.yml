@@ -14,7 +14,7 @@ eureka:
 ## TODO
 spring:
   zipkin:
-    baseUrl: http://zipkin:9411
+    baseUrl: http://localhost:9411
   sleuth:
     sampler:
       percentage: 1
