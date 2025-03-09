@@ -42,7 +42,7 @@ public class OrganizationRestTemplateClient {
 
 		ResponseEntity<Organization> restExchange =
 				restTemplate.exchange(
-						"http://gateway:8072/organization/v1/organization/{organizationId}",
+						"http://localhost:8072/organization/v1/organization/{organizationId}",
 						HttpMethod.GET,
 						null, Organization.class, organizationId);
 
